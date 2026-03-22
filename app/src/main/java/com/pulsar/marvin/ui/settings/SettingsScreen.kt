@@ -168,22 +168,45 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
             )
 
+            var showConfirmDialog by remember { mutableStateOf(false) }
+
             Button(
-                onClick = {
-                    viewModel.saveSettings(
-                        height = height,
-                        targetWeight = targetWeight,
-                        reductionObese = reductionObese,
-                        reductionOverweight = reductionOverweight,
-                        reductionNormal = reductionNormal,
-                        useFeetAndInches = useFeetAndInches,
-                        onComplete = onBack
-                    )
-                },
+                onClick = { showConfirmDialog = true },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
             ) {
                 Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+
+            if (showConfirmDialog) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmDialog = false },
+                    title = { Text("Save Settings") },
+                    text = { Text("Are you sure you want to save? This will recalculate all future plans based on the new settings.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showConfirmDialog = false
+                                viewModel.saveSettings(
+                                    height = height,
+                                    targetWeight = targetWeight,
+                                    reductionObese = reductionObese,
+                                    reductionOverweight = reductionOverweight,
+                                    reductionNormal = reductionNormal,
+                                    useFeetAndInches = useFeetAndInches,
+                                    onComplete = onBack
+                                )
+                            }
+                        ) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
         }
     }

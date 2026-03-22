@@ -23,7 +23,7 @@ data class SettingsState(
     val targetWeight: String = "",
     val reductionObese: String = "0.012",
     val reductionOverweight: String = "0.01",
-    val reductionNormal: String = "0.08",
+    val reductionNormal: String = "0.008",
     val useFeetAndInches: Boolean = true
 )
 
@@ -66,7 +66,7 @@ class SettingsViewModel(
             val tw = targetWeight.toFloatOrNull() ?: 0f
             val obese = reductionObese.toFloatOrNull() ?: 0.012f
             val overweight = reductionOverweight.toFloatOrNull() ?: 0.01f
-            val normal = reductionNormal.toFloatOrNull() ?: 0.08f
+            val normal = reductionNormal.toFloatOrNull() ?: 0.008f
             
             prefsRepo.saveSettingsData(h, tw, obese, overweight, normal, useFeetAndInches)
             
@@ -108,6 +108,9 @@ class SettingsViewModel(
                 else -> reductionNormal
             }
             currentWeight -= (currentWeight * reductionRate)
+            // if (currentWeight < targetWeight) {
+            //     currentWeight = targetWeight
+            // }
 
             val startOfWeekMillis = baseDate.plusWeeks((week - currentWeek).toLong()).toInstant().toEpochMilli()
             newPlans.add(WeeklyPlan(startOfWeekMillis = startOfWeekMillis, weekNumber = week, targetWeight = currentWeight))

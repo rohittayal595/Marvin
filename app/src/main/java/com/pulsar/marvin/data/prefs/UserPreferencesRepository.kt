@@ -45,7 +45,7 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
                 isOnboardingComplete = preferences[IS_ONBOARDING_COMPLETE] ?: false,
                 reductionObese = preferences[REDUCTION_OBESE] ?: 0.012f,
                 reductionOverweight = preferences[REDUCTION_OVERWEIGHT] ?: 0.01f,
-                reductionNormal = preferences[REDUCTION_NORMAL] ?: 0.08f,
+                reductionNormal = preferences[REDUCTION_NORMAL] ?: 0.008f,
                 useFeetAndInches = preferences[USE_FEET_AND_INCHES] ?: true
             )
         }

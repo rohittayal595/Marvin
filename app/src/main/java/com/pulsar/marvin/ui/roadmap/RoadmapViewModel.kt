@@ -109,6 +109,9 @@ class RoadmapViewModel(
                     else -> prefs.reductionNormal
                 }
                 currentWeight -= (currentWeight * reductionRate)
+                // if (currentWeight < targetWeight) {
+                //     currentWeight = targetWeight
+                // }
 
                 val startOfWeekMillis = baseDate.plusWeeks((week - currentWeek).toLong()).toInstant().toEpochMilli()
                 newPlans.add(WeeklyPlan(startOfWeekMillis = startOfWeekMillis, weekNumber = week, targetWeight = currentWeight))
