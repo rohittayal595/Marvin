@@ -336,20 +336,20 @@ fun WeeklyPlanCard(
       ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
           // Week Number Circle
-          Box(
-            modifier = Modifier
-              .size(40.dp)
-              .background(if (isCurrentWeek) GreenSecondary else LightGrey, CircleShape),
-            contentAlignment = Alignment.Center
-          ) {
-            Text(
-              text = plan.weekNumber.toString(),
-              fontWeight = FontWeight.Bold,
-              color = if (isCurrentWeek) GreenPrimary else DarkGrey
-            )
-          }
+          // Box(
+          //   modifier = Modifier
+          //     .size(40.dp)
+          //     .background(if (isCurrentWeek) GreenSecondary else LightGrey, CircleShape),
+          //   contentAlignment = Alignment.Center
+          // ) {
+          //   Text(
+          //     text = plan.weekNumber.toString(),
+          //     fontWeight = FontWeight.Bold,
+          //     color = if (isCurrentWeek) GreenPrimary else DarkGrey
+          //   )
+          // }
 
-          Spacer(modifier = Modifier.width(16.dp))
+          // Spacer(modifier = Modifier.width(16.dp))
 
           Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -389,26 +389,44 @@ fun WeeklyPlanCard(
           }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          Icon(
-            Icons.AutoMirrored.Rounded.TrendingDown,
-            contentDescription = null,
-            tint = Color.Gray,
-            modifier = Modifier.size(16.dp)
-          )
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(
-            text = String.format(Locale.getDefault(), "%.1f kg", plan.targetWeight),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkGrey
-          )
-          Spacer(modifier = Modifier.width(8.dp))
-          Icon(
-            imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-            contentDescription = "Expand",
-            tint = Color.Gray
-          )
+        Column {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+              text = "Projected",
+              fontSize = 16.sp,
+              fontWeight = FontWeight.Bold,
+              color = DarkGrey
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+              text = String.format(Locale.getDefault(), "%.1f kg", plan.targetWeight),
+              fontSize = 16.sp,
+              fontWeight = FontWeight.Bold,
+              color = DarkGrey
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+              imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+              contentDescription = "Expand",
+              tint = Color.Gray
+            )
+          }
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+              text = "Actual",
+              fontSize = 16.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF26A69A)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+              text = String.format(Locale.getDefault(), "%.1f kg", plan.targetWeight),
+              fontSize = 16.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF26A69A)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+          }
         }
       }
 
@@ -455,8 +473,52 @@ fun WeeklyPlanCard(
                 Spacer(modifier = Modifier.size(24.dp))
               }
             }
-            if (i < 6) {
-              Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (i == 6) {
+              Row {
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Text(
+                    "Avg", color = Color.Gray, fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                  )
+                  val logsThisWeek = dailyLogs.filter { log ->
+                    log.dateMillis >= plan.startOfWeekMillis &&
+                      log.dateMillis <= plan.startOfWeekMillis + Duration.ofDays(6).toMillis()
+                  }
+                  val avgWeight = logsThisWeek.mapNotNull { it.weight }.average()
+                  val avgCalories = logsThisWeek.mapNotNull { it.calories }.average()
+
+                  val avgWeightText =
+                    if (avgWeight.isNaN()) "-- kg" else String.format(
+                      Locale.getDefault(),
+                      "%.1f kg",
+                      avgWeight
+                    )
+                  val avgCaloriesText =
+                    if (avgCalories.isNaN()) "-- kcal" else String.format(
+                      Locale.getDefault(),
+                      "%.0f kcal",
+                      avgCalories
+                    )
+
+                  Text(
+                    avgWeightText, color = DarkGrey, fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                  )
+                  Text(
+                    avgCaloriesText, color = DarkGrey, fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                  )
+                }
+                Spacer(modifier = Modifier.size(24.dp))
+              }
             }
           }
 
