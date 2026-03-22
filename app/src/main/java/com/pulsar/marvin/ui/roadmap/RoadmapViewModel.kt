@@ -79,6 +79,50 @@ class RoadmapViewModel(
             dailyLogDao.delete(log)
         }
     }
+
+    fun recalculatePlans(currentWeek: Int, actualWeight: Float) {
+        viewModelScope.launch {
+            val prefs = _state.value.userPreferences ?: return@launch
+            val targetWeight = prefs.targetWeight
+            val height = prefs.heightCm
+            val heightM = height / 100f
+
+            if (heightM <= 0) return@launch
+
+            val currentPlan = _state.value.weeklyPlans.find { it.weekNumber == currentWeek }
+            val currentWeekStartMillis = currentPlan?.startOfWeekMillis ?: return@launch
+
+            // Delete all plans after currentWeek
+            weeklyPlanDao.deletePlansAfter(currentWeek)
+
+            val newPlans = mutableListOf<WeeklyPlan>()
+            var currentWeight = if (actualWeight > 0f) actualWeight else (currentPlan.targetWeight)
+            var week = currentWeek + 1
+            val baseDate = Instant.ofEpochMilli(currentWeekStartMillis).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault())
+
+            while (currentWeight > targetWeight) {
+                val bmi = currentWeight / (heightM * heightM)
+                val reductionRate = when {
+                    bmi >= 30f -> com.pulsar.marvin.ui.onboarding.REDUCTION_OBESE
+                    bmi >= 25f -> com.pulsar.marvin.ui.onboarding.REDUCTION_OVERWEIGHT
+                    bmi >= 18.5f -> com.pulsar.marvin.ui.onboarding.REDUCTION_NORMAL
+                    else -> com.pulsar.marvin.ui.onboarding.REDUCTION_NORMAL
+                }
+                currentWeight -= (currentWeight * reductionRate)
+
+                val startOfWeekMillis = baseDate.plusWeeks((week - currentWeek).toLong()).toInstant().toEpochMilli()
+                newPlans.add(WeeklyPlan(startOfWeekMillis = startOfWeekMillis, weekNumber = week, targetWeight = currentWeight))
+                week++
+
+                // safety break
+                if (week > 200) break
+            }
+
+            if (newPlans.isNotEmpty()) {
+                weeklyPlanDao.insertAll(newPlans)
+            }
+        }
+    }
 }
 
 class RoadmapViewModelFactory(

@@ -96,6 +96,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 val actualWeight = logsThisWeek.mapNotNull { it.weight }.average().let { if (it.isNaN()) 0f else it.toFloat() }
                                 val actualCalories = logsThisWeek.mapNotNull { it.calories }.average().let { if (it.isNaN()) 0 else it.toInt() }
+                                val lastReading = logsThisWeek.filter { it.weight != null }.maxByOrNull { it.dateMillis }?.weight ?: actualWeight
                                 
                                 WeeklyPivotDialog(
                                     weekNumber = pivotWeek,
@@ -105,7 +106,7 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { showPivot = false },
                                     onApply = { option ->
                                         if (option == PivotOption.RECALCULATE) {
-                                            // TODO: Update next weeks with current week's last reading as starting point.
+                                            roadmapViewModel.recalculatePlans(pivotWeek, lastReading)
                                         }
                                         showPivot = false
                                     }
