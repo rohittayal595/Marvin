@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MonitorWeight
@@ -155,7 +156,8 @@ fun RoadmapScreen(
               plan = plan,
               dailyLogs = dailyLogs,
               isCurrentWeek = plan.startOfWeekMillis == state.currentWeekStartMillis,
-              onPivotClick = { onPivotRequested(plan.weekNumber, plan.targetWeight) }
+              onPivotClick = { onPivotRequested(plan.weekNumber, plan.targetWeight) },
+              onDeleteLog = { log -> viewModel.deleteDailyLog(log) }
             )
           }
           item {
@@ -311,6 +313,7 @@ fun WeeklyPlanCard(
   dailyLogs: List<DailyLog>,
   isCurrentWeek: Boolean,
   onPivotClick: () -> Unit,
+  onDeleteLog: (DailyLog) -> Unit,
 ) {
   var expanded by remember { mutableStateOf(isCurrentWeek) }
 
@@ -431,14 +434,26 @@ fun WeeklyPlanCard(
                 ?: "-- kg"
             val caloriesText = logForDay?.calories?.let { "$it kcal" } ?: "-- kcal"
 
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(dayAbbreviations[i], color = Color.Gray, fontSize = 14.sp)
-              Text(weightText, color = DarkGrey, fontSize = 14.sp)
-              Text(caloriesText, color = DarkGrey, fontSize = 14.sp)
+            Row {
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .weight(1f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(dayAbbreviations[i], color = Color.Gray, fontSize = 14.sp)
+                Text(weightText, color = DarkGrey, fontSize = 14.sp)
+                Text(caloriesText, color = DarkGrey, fontSize = 14.sp)
+              }
+              Spacer(modifier = Modifier.size(4.dp))
+              if (logForDay != null) {
+                IconButton(onClick = { onDeleteLog(logForDay) }, modifier = Modifier.size(24.dp)) {
+                  Icon(Icons.Rounded.Delete, contentDescription = "Delete Log", tint = Color.Gray)
+                }
+              } else {
+                Spacer(modifier = Modifier.size(24.dp))
+              }
             }
             if (i < 6) {
               Spacer(modifier = Modifier.height(8.dp))
@@ -446,10 +461,15 @@ fun WeeklyPlanCard(
           }
 
 
-          val nowMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-          val lastDayOfWeek = Instant.ofEpochMilli(plan.startOfWeekMillis).plus(Duration.ofDays(6)).toEpochMilli()
+          val nowMillis =
+            LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+          val startDayOfWeek = Instant.ofEpochMilli(plan.startOfWeekMillis)
+          val lastDayOfWeek = startDayOfWeek.plus(Duration.ofDays(6)).toEpochMilli()
           // Pivot Option for Task 3
-          if (/*nowMillis > lastDayOfWeek &&*/ dailyLogs.first().dateMillis <= lastDayOfWeek) {
+          if (/*nowMillis > lastDayOfWeek &&*/
+            dailyLogs.first().dateMillis >= startDayOfWeek.toEpochMilli() &&
+            dailyLogs.first().dateMillis <= lastDayOfWeek
+          ) {
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
               onClick = onPivotClick,

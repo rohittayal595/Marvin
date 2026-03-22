@@ -73,6 +73,12 @@ class RoadmapViewModel(
             setShowCheckInModal(false)
         }
     }
+
+    fun deleteDailyLog(log: DailyLog) {
+        viewModelScope.launch {
+            dailyLogDao.delete(log)
+        }
+    }
 }
 
 class RoadmapViewModelFactory(
