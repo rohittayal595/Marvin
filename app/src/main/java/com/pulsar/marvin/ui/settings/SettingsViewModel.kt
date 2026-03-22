@@ -10,7 +10,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import kotlinx.coroutines.flow.first
+
 data class SettingsState(
+    val height: String = "",
+    val targetWeight: String = "",
     val reductionObese: String = "0.012",
     val reductionOverweight: String = "0.01",
     val reductionNormal: String = "0.08"
@@ -25,14 +29,23 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            prefsRepo.userPreferencesFlow.collect { prefs ->
-                _state.value = SettingsState(
-                    reductionObese = prefs.reductionObese.toString(),
-                    reductionOverweight = prefs.reductionOverweight.toString(),
-                    reductionNormal = prefs.reductionNormal.toString()
-                )
-            }
+            val prefs = prefsRepo.userPreferencesFlow.first()
+            _state.value = SettingsState(
+                height = if (prefs.heightCm > 0f) prefs.heightCm.toString() else "",
+                targetWeight = if (prefs.targetWeight > 0f) prefs.targetWeight.toString() else "",
+                reductionObese = prefs.reductionObese.toString(),
+                reductionOverweight = prefs.reductionOverweight.toString(),
+                reductionNormal = prefs.reductionNormal.toString()
+            )
         }
+    }
+
+    fun updateHeight(value: String) {
+        _state.value = _state.value.copy(height = value)
+    }
+
+    fun updateTargetWeight(value: String) {
+        _state.value = _state.value.copy(targetWeight = value)
     }
 
     fun updateReductionObese(value: String) {
@@ -49,11 +62,13 @@ class SettingsViewModel(
 
     fun saveSettings(onComplete: () -> Unit) {
         viewModelScope.launch {
+            val height = _state.value.height.toFloatOrNull() ?: 0f
+            val targetWeight = _state.value.targetWeight.toFloatOrNull() ?: 0f
             val obese = _state.value.reductionObese.toFloatOrNull() ?: 0.012f
             val overweight = _state.value.reductionOverweight.toFloatOrNull() ?: 0.01f
             val normal = _state.value.reductionNormal.toFloatOrNull() ?: 0.08f
             
-            prefsRepo.saveReductionRates(obese, overweight, normal)
+            prefsRepo.saveSettingsData(height, targetWeight, obese, overweight, normal)
             onComplete()
         }
     }

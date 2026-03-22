@@ -63,4 +63,14 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
             preferences[REDUCTION_NORMAL] = normal
         }
     }
+    
+    suspend fun saveSettingsData(height: Float, targetWeight: Float, obese: Float, overweight: Float, normal: Float) {
+        dataStore.edit { preferences ->
+            if (height > 0f) preferences[HEIGHT_CM] = height
+            if (targetWeight > 0f) preferences[TARGET_WEIGHT] = targetWeight
+            preferences[REDUCTION_OBESE] = obese
+            preferences[REDUCTION_OVERWEIGHT] = overweight
+            preferences[REDUCTION_NORMAL] = normal
+        }
+    }
 }

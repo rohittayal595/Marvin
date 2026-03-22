@@ -15,6 +15,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 val GreenPrimary = Color(0xFF0A8537)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,12 +45,39 @@ fun SettingsScreen(
             )
         }
     ) { paddingValues ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
+                .verticalScroll(scrollState)
         ) {
+            Text(
+                text = "Personal Info",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            OutlinedTextField(
+                value = state.height,
+                onValueChange = { viewModel.updateHeight(it) },
+                label = { Text("Height (cm)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            )
+
+            OutlinedTextField(
+                value = state.targetWeight,
+                onValueChange = { viewModel.updateTargetWeight(it) },
+                label = { Text("Target Weight") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(bottom = 24.dp))
+
             Text(
                 text = "Target Weight Reduction Rates",
                 fontSize = 18.sp,
