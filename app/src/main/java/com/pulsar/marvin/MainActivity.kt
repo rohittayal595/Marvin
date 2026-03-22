@@ -104,7 +104,9 @@ class MainActivity : ComponentActivity() {
                                     averageCalories = actualCalories,
                                     onDismiss = { showPivot = false },
                                     onApply = { option ->
-                                        // Update the roadmap logic based on option (mocked application for UI display)
+                                        if (option == PivotOption.RECALCULATE) {
+                                            // TODO: Update next weeks with current week's last reading as starting point.
+                                        }
                                         showPivot = false
                                     }
                                 )

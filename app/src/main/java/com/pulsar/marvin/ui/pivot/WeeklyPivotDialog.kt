@@ -106,31 +106,18 @@ fun WeeklyPivotDialog(
 
                 // Options
                 PivotOptionCard(
-                    title = "Option A: Adjust Intake",
-                    description = "Reduce your calorie ceiling for next week",
+                    title = "Option A: Make up for it in next week",
+                    description = "Take care of it by reducing your calorie ceiling/increasing activity for next week",
                     icon = Icons.Rounded.Restaurant,
                     iconBg = OptionABg,
                     iconTint = OptionAText,
-                    isSelected = selectedOption == PivotOption.INTAKE,
-                    onClick = { selectedOption = PivotOption.INTAKE }
+                    isSelected = selectedOption == PivotOption.AGGRESSIVE_NEXT_WEEK,
+                    onClick = { selectedOption = PivotOption.AGGRESSIVE_NEXT_WEEK }
                 )
-                
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 PivotOptionCard(
-                    title = "Option B: Increase Activity",
-                    description = "Maintain calories but set a step/activity goal",
-                    icon = Icons.Rounded.Timeline,
-                    iconBg = OptionBBg,
-                    iconTint = OptionBText,
-                    isSelected = selectedOption == PivotOption.ACTIVITY,
-                    onClick = { selectedOption = PivotOption.ACTIVITY }
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                PivotOptionCard(
-                    title = "Option C: Recalculate Plan",
+                    title = "Option B: Recalculate Plan",
                     description = "Adjust timeline based on current weight (moves ETA out)",
                     icon = Icons.Rounded.CalendarToday,
                     iconBg = OptionCBg,
@@ -162,7 +149,7 @@ fun WeeklyPivotDialog(
                             .weight(1f)
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8AD09D)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A8537)),
                         enabled = selectedOption != null
                     ) {
                         Text("Apply Choice", color = Color.White)
@@ -215,5 +202,5 @@ fun PivotOptionCard(
 }
 
 enum class PivotOption {
-    INTAKE, ACTIVITY, RECALCULATE
+    AGGRESSIVE_NEXT_WEEK, RECALCULATE
 }
