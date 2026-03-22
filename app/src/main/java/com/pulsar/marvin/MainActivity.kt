@@ -25,10 +25,13 @@ import com.pulsar.marvin.ui.progress.ProgressScreen
 import com.pulsar.marvin.ui.roadmap.RoadmapScreen
 import com.pulsar.marvin.ui.roadmap.RoadmapViewModel
 import com.pulsar.marvin.ui.roadmap.RoadmapViewModelFactory
+import com.pulsar.marvin.ui.settings.SettingsScreen
+import com.pulsar.marvin.ui.settings.SettingsViewModel
+import com.pulsar.marvin.ui.settings.SettingsViewModelFactory
 import com.pulsar.marvin.ui.theme.MarvinTheme
 
 enum class Screen {
-    ONBOARDING, ROADMAP, PROGRESS
+    ONBOARDING, ROADMAP, PROGRESS, SETTINGS
 }
 
 class MainActivity : ComponentActivity() {
@@ -45,6 +48,9 @@ class MainActivity : ComponentActivity() {
 
         val roadmapFactory = RoadmapViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
         val roadmapViewModel = ViewModelProvider(this, roadmapFactory)[RoadmapViewModel::class.java]
+
+        val settingsFactory = SettingsViewModelFactory(prefsRepo)
+        val settingsViewModel = ViewModelProvider(this, settingsFactory)[SettingsViewModel::class.java]
 
         setupDailyReminder()
 
@@ -78,6 +84,7 @@ class MainActivity : ComponentActivity() {
                             RoadmapScreen(
                                 viewModel = roadmapViewModel,
                                 onNavigateToProgress = { currentScreen = Screen.PROGRESS },
+                                onNavigateToSettings = { currentScreen = Screen.SETTINGS },
                                 onPivotRequested = { week ->
                                     pivotWeek = week
                                     showPivot = true
@@ -120,6 +127,12 @@ class MainActivity : ComponentActivity() {
                                 dailyLogs = state.dailyLogs,
                                 startingWeight = prefs?.startingWeight ?: 0f,
                                 targetWeight = prefs?.targetWeight ?: 0f,
+                                onBack = { currentScreen = Screen.ROADMAP }
+                            )
+                        }
+                        Screen.SETTINGS -> {
+                            SettingsScreen(
+                                viewModel = settingsViewModel,
                                 onBack = { currentScreen = Screen.ROADMAP }
                             )
                         }

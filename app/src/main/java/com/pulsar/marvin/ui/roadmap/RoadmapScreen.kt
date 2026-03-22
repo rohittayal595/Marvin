@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -75,6 +76,7 @@ val ScreenBg = Color(0xFFF9F9F9)
 fun RoadmapScreen(
   viewModel: RoadmapViewModel,
   onNavigateToProgress: () -> Unit,
+  onNavigateToSettings: () -> Unit,
   onPivotRequested: (weekNumber: Int) -> Unit,
 ) {
   val state by viewModel.state.collectAsState()
@@ -120,6 +122,7 @@ fun RoadmapScreen(
           totalWeeks = state.weeklyPlans.size,
           currentWeek = currentWeekIndex,
           onStatsClick = onNavigateToProgress,
+          onSettingsClick = onNavigateToSettings,
           etaDate = etaDate,
         )
 
@@ -187,6 +190,7 @@ fun RoadmapHeader(
   totalWeeks: Int,
   currentWeek: Int,
   onStatsClick: () -> Unit,
+  onSettingsClick: () -> Unit,
   etaDate: LocalDate,
 ) {
   Box(
@@ -218,7 +222,13 @@ fun RoadmapHeader(
               tint = Color.White
             )
           }
-          // Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = Color.White)
+          IconButton(onClick = onSettingsClick, modifier = Modifier.size(24.dp)) {
+            Icon(
+              Icons.Rounded.Settings,
+              contentDescription = "Settings",
+              tint = Color.White
+            )
+          }
         }
       }
 

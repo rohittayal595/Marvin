@@ -16,7 +16,10 @@ data class UserPreferences(
     val heightCm: Float,
     val startingWeight: Float,
     val targetWeight: Float,
-    val isOnboardingComplete: Boolean
+    val isOnboardingComplete: Boolean,
+    val reductionObese: Float,
+    val reductionOverweight: Float,
+    val reductionNormal: Float
 )
 
 class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
@@ -26,6 +29,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
         val STARTING_WEIGHT = floatPreferencesKey("starting_weight")
         val TARGET_WEIGHT = floatPreferencesKey("target_weight")
         val IS_ONBOARDING_COMPLETE = booleanPreferencesKey("is_onboarding_complete")
+        val REDUCTION_OBESE = floatPreferencesKey("reduction_obese")
+        val REDUCTION_OVERWEIGHT = floatPreferencesKey("reduction_overweight")
+        val REDUCTION_NORMAL = floatPreferencesKey("reduction_normal")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = dataStore.data
@@ -34,7 +40,10 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
                 heightCm = preferences[HEIGHT_CM] ?: 0f,
                 startingWeight = preferences[STARTING_WEIGHT] ?: 0f,
                 targetWeight = preferences[TARGET_WEIGHT] ?: 0f,
-                isOnboardingComplete = preferences[IS_ONBOARDING_COMPLETE] ?: false
+                isOnboardingComplete = preferences[IS_ONBOARDING_COMPLETE] ?: false,
+                reductionObese = preferences[REDUCTION_OBESE] ?: 0.012f,
+                reductionOverweight = preferences[REDUCTION_OVERWEIGHT] ?: 0.01f,
+                reductionNormal = preferences[REDUCTION_NORMAL] ?: 0.08f
             )
         }
 
@@ -44,6 +53,14 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
             preferences[STARTING_WEIGHT] = startingWeight
             preferences[TARGET_WEIGHT] = targetWeight
             preferences[IS_ONBOARDING_COMPLETE] = true
+        }
+    }
+    
+    suspend fun saveReductionRates(obese: Float, overweight: Float, normal: Float) {
+        dataStore.edit { preferences ->
+            preferences[REDUCTION_OBESE] = obese
+            preferences[REDUCTION_OVERWEIGHT] = overweight
+            preferences[REDUCTION_NORMAL] = normal
         }
     }
 }

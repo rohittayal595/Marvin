@@ -103,10 +103,10 @@ class RoadmapViewModel(
             while (currentWeight > targetWeight) {
                 val bmi = currentWeight / (heightM * heightM)
                 val reductionRate = when {
-                    bmi >= 30f -> com.pulsar.marvin.ui.onboarding.REDUCTION_OBESE
-                    bmi >= 25f -> com.pulsar.marvin.ui.onboarding.REDUCTION_OVERWEIGHT
-                    bmi >= 18.5f -> com.pulsar.marvin.ui.onboarding.REDUCTION_NORMAL
-                    else -> com.pulsar.marvin.ui.onboarding.REDUCTION_NORMAL
+                    bmi >= 30f -> prefs.reductionObese
+                    bmi >= 25f -> prefs.reductionOverweight
+                    bmi >= 18.5f -> prefs.reductionNormal
+                    else -> prefs.reductionNormal
                 }
                 currentWeight -= (currentWeight * reductionRate)
 

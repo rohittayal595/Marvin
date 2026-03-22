@@ -13,9 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-const val REDUCTION_OBESE = 0.012f
-const val REDUCTION_OVERWEIGHT = 0.01f
-const val REDUCTION_NORMAL = 0.01f // TODO: Maybe reduce to 0.08f
+import kotlinx.coroutines.flow.first
 
 class OnboardingViewModel(
   private val prefsRepo: UserPreferencesRepository,
@@ -74,13 +72,18 @@ class OnboardingViewModel(
         val heightM = height / 100f
 
         if (heightM > 0) {
+          val prefs = prefsRepo.userPreferencesFlow.first()
+          val reductionObese = prefs.reductionObese
+          val reductionOverweight = prefs.reductionOverweight
+          val reductionNormal = prefs.reductionNormal
+
           while (currentWeight > targetWeight) {
             val bmi = currentWeight / (heightM * heightM)
             val reductionRate = when {
-              bmi >= 30f -> REDUCTION_OBESE
-              bmi >= 25f -> REDUCTION_OVERWEIGHT
-              bmi >= 18.5f -> REDUCTION_NORMAL
-              else -> REDUCTION_NORMAL
+              bmi >= 30f -> reductionObese
+              bmi >= 25f -> reductionOverweight
+              bmi >= 18.5f -> reductionNormal
+              else -> reductionNormal
             }
             currentWeight -= (currentWeight * reductionRate)
             // if (currentWeight < targetWeight) {
