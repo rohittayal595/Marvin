@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 val ErrorOrange = Color(0xFFE65100)
 val ErrorOrangeBg = Color(0xFFFFF3E0)
@@ -44,16 +45,17 @@ fun WeeklyPivotDialog(
 ) {
     var selectedOption by remember { mutableStateOf<PivotOption?>(null) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss,
+           properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
+                    .padding(16.dp)
             ) {
                 // Header
                 Row(

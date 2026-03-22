@@ -57,8 +57,7 @@ class MainActivity : ComponentActivity() {
                     val prefs by prefsRepo.userPreferencesFlow.collectAsState(initial = null)
                     var currentScreen by remember { mutableStateOf(Screen.ONBOARDING) }
                     var showPivot by remember { mutableStateOf(false) }
-                    var pivotWeek by remember { mutableStateOf(1) }
-                    var pivotTarget by remember { mutableStateOf(0f) }
+                    var pivotWeek by remember { mutableIntStateOf(1) }
 
                     LaunchedEffect(prefs) {
                         if (prefs?.isOnboardingComplete == true && currentScreen == Screen.ONBOARDING) {
@@ -79,22 +78,30 @@ class MainActivity : ComponentActivity() {
                             RoadmapScreen(
                                 viewModel = roadmapViewModel,
                                 onNavigateToProgress = { currentScreen = Screen.PROGRESS },
-                                onPivotRequested = { week, target ->
+                                onPivotRequested = { week ->
                                     pivotWeek = week
-                                    pivotTarget = target
                                     showPivot = true
                                 }
                             )
 
                             if (showPivot) {
                                 val state by roadmapViewModel.state.collectAsState()
-                                val actualWeight = state.dailyLogs.firstOrNull()?.weight ?: prefs?.startingWeight ?: 0f
+                                val plan = state.weeklyPlans.find { it.weekNumber == pivotWeek }
+                                val targetWeight = plan?.targetWeight ?: 0f
+
+                                val startOfWeekMillis = plan?.startOfWeekMillis ?: 0L
+                                val endOfWeekMillis = startOfWeekMillis + java.time.Duration.ofDays(6).toMillis()
+                                val logsThisWeek = state.dailyLogs.filter { log ->
+                                    log.dateMillis in startOfWeekMillis..endOfWeekMillis
+                                }
+                                val actualWeight = logsThisWeek.mapNotNull { it.weight }.average().let { if (it.isNaN()) 0f else it.toFloat() }
+                                val actualCalories = logsThisWeek.mapNotNull { it.calories }.average().let { if (it.isNaN()) 0 else it.toInt() }
                                 
                                 WeeklyPivotDialog(
                                     weekNumber = pivotWeek,
-                                    targetWeight = pivotTarget,
+                                    targetWeight = targetWeight,
                                     actualWeight = actualWeight,
-                                    averageCalories = 2000, // Mocked for UI implementation
+                                    averageCalories = actualCalories,
                                     onDismiss = { showPivot = false },
                                     onApply = { option ->
                                         // Update the roadmap logic based on option (mocked application for UI display)

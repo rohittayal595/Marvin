@@ -75,7 +75,7 @@ val ScreenBg = Color(0xFFF9F9F9)
 fun RoadmapScreen(
   viewModel: RoadmapViewModel,
   onNavigateToProgress: () -> Unit,
-  onPivotRequested: (weekNumber: Int, target: Float) -> Unit,
+  onPivotRequested: (weekNumber: Int) -> Unit,
 ) {
   val state by viewModel.state.collectAsState()
 
@@ -157,7 +157,9 @@ fun RoadmapScreen(
               plan = plan,
               dailyLogs = dailyLogs,
               isCurrentWeek = plan.startOfWeekMillis == state.currentWeekStartMillis,
-              onPivotClick = { onPivotRequested(plan.weekNumber, plan.targetWeight) },
+              onPivotClick = { 
+                onPivotRequested(plan.weekNumber) 
+              },
               onDeleteLog = { log -> viewModel.deleteDailyLog(log) }
             )
           }
@@ -316,7 +318,7 @@ fun WeeklyPlanCard(
   onPivotClick: () -> Unit,
   onDeleteLog: (DailyLog) -> Unit,
 ) {
-  var expanded by remember { mutableStateOf(isCurrentWeek) }
+  var expanded by remember { mutableStateOf(false) }
 
   val logsThisWeek = dailyLogs.filter { log ->
     log.dateMillis >= plan.startOfWeekMillis &&
@@ -526,7 +528,7 @@ fun WeeklyPlanCard(
                     textAlign = TextAlign.End
                   )
                 }
-                Spacer(modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(28.dp))
               }
             }
           }
@@ -538,6 +540,7 @@ fun WeeklyPlanCard(
           val lastDayOfWeek = startDayOfWeek.plus(Duration.ofDays(6)).toEpochMilli()
           // Pivot Option for Task 3
           if (/*nowMillis > lastDayOfWeek &&*/
+            dailyLogs.isNotEmpty() &&
             dailyLogs.first().dateMillis >= startDayOfWeek.toEpochMilli() &&
             dailyLogs.first().dateMillis <= lastDayOfWeek
           ) {
