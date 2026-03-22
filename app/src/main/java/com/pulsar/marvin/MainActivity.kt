@@ -7,7 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -34,136 +40,151 @@ import com.pulsar.marvin.ui.settings.SettingsViewModelFactory
 import com.pulsar.marvin.ui.theme.MarvinTheme
 
 enum class Screen {
-    ONBOARDING, ROADMAP, PROGRESS, SETTINGS, ONBOARDING_SETTINGS
+  ONBOARDING, ROADMAP, PROGRESS, SETTINGS, ONBOARDING_SETTINGS
 }
 
 class MainActivity : ComponentActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        super.onCreate(savedInstanceState)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    enableEdgeToEdge()
+    super.onCreate(savedInstanceState)
 
-        val database = AppDatabase.getDatabase(this)
-        val prefsRepo = UserPreferencesRepository(this.dataStore)
-        
-        val onboardingFactory = OnboardingViewModelFactory(prefsRepo, database.weeklyPlanDao())
-        val onboardingViewModel = ViewModelProvider(this, onboardingFactory)[OnboardingViewModel::class.java]
+    val database = AppDatabase.getDatabase(this)
+    val prefsRepo = UserPreferencesRepository(this.dataStore)
 
-        val roadmapFactory = RoadmapViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
-        val roadmapViewModel = ViewModelProvider(this, roadmapFactory)[RoadmapViewModel::class.java]
+    val onboardingFactory = OnboardingViewModelFactory(prefsRepo, database.weeklyPlanDao())
+    val onboardingViewModel =
+      ViewModelProvider(this, onboardingFactory)[OnboardingViewModel::class.java]
 
-        val settingsFactory = SettingsViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
-        val settingsViewModel = ViewModelProvider(this, settingsFactory)[SettingsViewModel::class.java]
+    val roadmapFactory =
+      RoadmapViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
+    val roadmapViewModel = ViewModelProvider(this, roadmapFactory)[RoadmapViewModel::class.java]
 
-        val onboardingSettingsFactory = OnboardingSettingsViewModelFactory(prefsRepo)
-        val onboardingSettingsViewModel = ViewModelProvider(this, onboardingSettingsFactory)[OnboardingSettingsViewModel::class.java]
+    val settingsFactory =
+      SettingsViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
+    val settingsViewModel = ViewModelProvider(this, settingsFactory)[SettingsViewModel::class.java]
 
-        setupDailyReminder()
+    val onboardingSettingsFactory = OnboardingSettingsViewModelFactory(prefsRepo)
+    val onboardingSettingsViewModel =
+      ViewModelProvider(this, onboardingSettingsFactory)[OnboardingSettingsViewModel::class.java]
 
-        setContent {
-            MarvinTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val prefs by prefsRepo.userPreferencesFlow.collectAsState(initial = null)
-                    var currentScreen by remember { mutableStateOf(Screen.ONBOARDING) }
-                    var showPivot by remember { mutableStateOf(false) }
-                    var pivotWeek by remember { mutableIntStateOf(1) }
+    setupDailyReminder()
 
-                    LaunchedEffect(prefs) {
-                        if (prefs?.isOnboardingComplete == true && currentScreen == Screen.ONBOARDING) {
-                            currentScreen = Screen.ROADMAP
-                        }
-                    }
+    setContent {
+      MarvinTheme {
+        Surface(
+          modifier = Modifier.fillMaxSize(),
+          color = MaterialTheme.colorScheme.background
+        ) {
+          val prefs by prefsRepo.userPreferencesFlow.collectAsState(initial = null)
+          var currentScreen by remember { mutableStateOf(Screen.ONBOARDING) }
+          var showPivot by remember { mutableStateOf(false) }
+          var pivotWeek by remember { mutableIntStateOf(1) }
 
-                    when (currentScreen) {
-                        Screen.ONBOARDING -> {
-                            if (prefs != null) {
-                                OnboardingScreen(
-                                    viewModel = onboardingViewModel,
-                                    onComplete = { currentScreen = Screen.ROADMAP },
-                                    onSettingsClick = { currentScreen = Screen.ONBOARDING_SETTINGS }
-                                )
-                            }
-                        }
-                        Screen.ROADMAP -> {
-                            RoadmapScreen(
-                                viewModel = roadmapViewModel,
-                                onNavigateToProgress = { currentScreen = Screen.PROGRESS },
-                                onNavigateToSettings = { currentScreen = Screen.SETTINGS },
-                                onPivotRequested = { week ->
-                                    pivotWeek = week
-                                    showPivot = true
-                                }
-                            )
-
-                            if (showPivot) {
-                                val state by roadmapViewModel.state.collectAsState()
-                                val plan = state.weeklyPlans.find { it.weekNumber == pivotWeek }
-                                val targetWeight = plan?.targetWeight ?: 0f
-
-                                val startOfWeekMillis = plan?.startOfWeekMillis ?: 0L
-                                val endOfWeekMillis = startOfWeekMillis + java.time.Duration.ofDays(6).toMillis()
-                                val logsThisWeek = state.dailyLogs.filter { log ->
-                                    log.dateMillis in startOfWeekMillis..endOfWeekMillis
-                                }
-                                val actualWeight = logsThisWeek.mapNotNull { it.weight }.average().let { if (it.isNaN()) 0f else it.toFloat() }
-                                val actualCalories = logsThisWeek.mapNotNull { it.calories }.average().let { if (it.isNaN()) 0 else it.toInt() }
-                                val lastReading = logsThisWeek.filter { it.weight != null }.maxByOrNull { it.dateMillis }?.weight ?: actualWeight
-                                
-                                WeeklyPivotDialog(
-                                    weekNumber = pivotWeek,
-                                    targetWeight = targetWeight,
-                                    actualWeight = actualWeight,
-                                    averageCalories = actualCalories,
-                                    onDismiss = { showPivot = false },
-                                    onApply = { option ->
-                                        if (option == PivotOption.RECALCULATE) {
-                                            roadmapViewModel.recalculatePlans(pivotWeek, lastReading)
-                                        }
-                                        showPivot = false
-                                    }
-                                )
-                            }
-                        }
-                        Screen.PROGRESS -> {
-                            val state by roadmapViewModel.state.collectAsState()
-                            ProgressScreen(
-                                weeklyPlans = state.weeklyPlans,
-                                dailyLogs = state.dailyLogs,
-                                startingWeight = prefs?.startingWeight ?: 0f,
-                                targetWeight = prefs?.targetWeight ?: 0f,
-                                onBack = { currentScreen = Screen.ROADMAP }
-                            )
-                        }
-                        Screen.SETTINGS -> {
-                            SettingsScreen(
-                                viewModel = settingsViewModel,
-                                onBack = { currentScreen = Screen.ROADMAP }
-                            )
-                        }
-                        Screen.ONBOARDING_SETTINGS -> {
-                          OnboardingSettingsScreen(
-                              viewModel = onboardingSettingsViewModel,
-                              onBack = { currentScreen = Screen.ONBOARDING }
-                          )
-                        }
-                    }
-                }
+          LaunchedEffect(prefs) {
+            if (prefs?.isOnboardingComplete == true && currentScreen == Screen.ONBOARDING) {
+              currentScreen = Screen.ROADMAP
             }
-        }
-    }
+          }
 
-    private fun setupDailyReminder() {
-        val workRequest = PeriodicWorkRequestBuilder<com.pulsar.marvin.worker.ReminderWorker>(24, java.util.concurrent.TimeUnit.HOURS)
-            .setInitialDelay(24, java.util.concurrent.TimeUnit.HOURS)
-            .build()
-        
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "daily_reminder",
-            ExistingPeriodicWorkPolicy.KEEP,
-            workRequest
-        )
+          when (currentScreen) {
+            Screen.ONBOARDING -> {
+              if (prefs != null) {
+                OnboardingScreen(
+                  viewModel = onboardingViewModel,
+                  onComplete = { currentScreen = Screen.ROADMAP },
+                  onSettingsClick = { currentScreen = Screen.ONBOARDING_SETTINGS }
+                )
+              }
+            }
+
+            Screen.ROADMAP -> {
+              RoadmapScreen(
+                viewModel = roadmapViewModel,
+                onNavigateToProgress = { currentScreen = Screen.PROGRESS },
+                onNavigateToSettings = { currentScreen = Screen.SETTINGS },
+                onPivotRequested = { week ->
+                  pivotWeek = week
+                  showPivot = true
+                }
+              )
+
+              if (showPivot) {
+                val state by roadmapViewModel.state.collectAsState()
+                val plan = state.weeklyPlans.find { it.weekNumber == pivotWeek }
+                val targetWeight = plan?.targetWeight ?: 0f
+
+                val startOfWeekMillis = plan?.startOfWeekMillis ?: 0L
+                val endOfWeekMillis = startOfWeekMillis + java.time.Duration.ofDays(6).toMillis()
+                val logsThisWeek = state.dailyLogs.filter { log ->
+                  log.dateMillis in startOfWeekMillis..endOfWeekMillis
+                }
+                val actualWeight = logsThisWeek.mapNotNull { it.weight }.average()
+                  .let { if (it.isNaN()) 0f else it.toFloat() }
+                val actualCalories = logsThisWeek.mapNotNull { it.calories }.average()
+                  .let { if (it.isNaN()) 0 else it.toInt() }
+                val lastReading =
+                  logsThisWeek.filter { it.weight != null }.maxByOrNull { it.dateMillis }?.weight
+                    ?: actualWeight
+
+                WeeklyPivotDialog(
+                  weekNumber = pivotWeek,
+                  targetWeight = targetWeight,
+                  actualWeight = actualWeight,
+                  averageCalories = actualCalories,
+                  onDismiss = { showPivot = false },
+                  onApply = { option ->
+                    if (option == PivotOption.RECALCULATE) {
+                      roadmapViewModel.recalculatePlans(pivotWeek, lastReading)
+                    }
+                    showPivot = false
+                  }
+                )
+              }
+            }
+
+            Screen.PROGRESS -> {
+              val state by roadmapViewModel.state.collectAsState()
+              ProgressScreen(
+                weeklyPlans = state.weeklyPlans,
+                dailyLogs = state.dailyLogs,
+                startingWeight = prefs?.startingWeight ?: 0f,
+                targetWeight = prefs?.targetWeight ?: 0f,
+                onBack = { currentScreen = Screen.ROADMAP }
+              )
+            }
+
+            Screen.SETTINGS -> {
+              SettingsScreen(
+                viewModel = settingsViewModel,
+                onBack = { currentScreen = Screen.ROADMAP }
+              )
+            }
+
+            Screen.ONBOARDING_SETTINGS -> {
+              OnboardingSettingsScreen(
+                viewModel = onboardingSettingsViewModel,
+                onBack = { currentScreen = Screen.ONBOARDING }
+              )
+            }
+          }
+        }
+      }
     }
+  }
+
+  private fun setupDailyReminder() {
+    val workRequest = PeriodicWorkRequestBuilder<com.pulsar.marvin.worker.ReminderWorker>(
+      24,
+      java.util.concurrent.TimeUnit.HOURS
+    )
+      .setInitialDelay(24, java.util.concurrent.TimeUnit.HOURS)
+      .build()
+
+    WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+      "daily_reminder",
+      ExistingPeriodicWorkPolicy.KEEP,
+      workRequest
+    )
+  }
 }

@@ -8,5 +8,5 @@ data class WeeklyPlan(
     @PrimaryKey
     val startOfWeekMillis: Long,
     val weekNumber: Int,
-    val targetWeight: Float
+    val targetWeight: Float,
 )

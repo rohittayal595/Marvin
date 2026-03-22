@@ -11,9 +11,8 @@ import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class OnboardingViewModel(
   private val prefsRepo: UserPreferencesRepository,
@@ -24,11 +23,11 @@ class OnboardingViewModel(
   val useFeetAndInches: StateFlow<Boolean> = _useFeetAndInches.asStateFlow()
 
   init {
-      viewModelScope.launch {
-          prefsRepo.userPreferencesFlow.collect { prefs ->
-              _useFeetAndInches.value = prefs.useFeetAndInches
-          }
+    viewModelScope.launch {
+      prefsRepo.userPreferencesFlow.collect { prefs ->
+        _useFeetAndInches.value = prefs.useFeetAndInches
       }
+    }
   }
 
   private val _heightText = MutableStateFlow("")
@@ -101,8 +100,15 @@ class OnboardingViewModel(
             //     currentWeight = targetWeight
             // }
 
-            val startOfWeekMillis = baseDate.plusWeeks(week.toLong() - 1L).toInstant().toEpochMilli()
-            plans.add(WeeklyPlan(startOfWeekMillis = startOfWeekMillis, weekNumber = week, targetWeight = currentWeight))
+            val startOfWeekMillis =
+              baseDate.plusWeeks(week.toLong() - 1L).toInstant().toEpochMilli()
+            plans.add(
+              WeeklyPlan(
+                startOfWeekMillis = startOfWeekMillis,
+                weekNumber = week,
+                targetWeight = currentWeight
+              )
+            )
             week++
 
             // safety break
@@ -113,7 +119,13 @@ class OnboardingViewModel(
         // Make sure there is at least one plan
         if (plans.isEmpty()) {
           val startOfWeekMillis = baseDate.toInstant().toEpochMilli()
-          plans.add(WeeklyPlan(startOfWeekMillis = startOfWeekMillis, weekNumber = 1, targetWeight = targetWeight))
+          plans.add(
+            WeeklyPlan(
+              startOfWeekMillis = startOfWeekMillis,
+              weekNumber = 1,
+              targetWeight = targetWeight
+            )
+          )
         }
 
         weeklyPlanDao.deleteAll()

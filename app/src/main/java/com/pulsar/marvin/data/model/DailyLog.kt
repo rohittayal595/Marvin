@@ -8,5 +8,5 @@ data class DailyLog(
     @PrimaryKey
     val dateMillis: Long,
     val weight: Float?,
-    val calories: Int?
+    val calories: Int?,
 )
