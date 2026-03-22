@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
         val roadmapFactory = RoadmapViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
         val roadmapViewModel = ViewModelProvider(this, roadmapFactory)[RoadmapViewModel::class.java]
 
-        val settingsFactory = SettingsViewModelFactory(prefsRepo)
+        val settingsFactory = SettingsViewModelFactory(prefsRepo, database.weeklyPlanDao(), database.dailyLogDao())
         val settingsViewModel = ViewModelProvider(this, settingsFactory)[SettingsViewModel::class.java]
 
         val onboardingSettingsFactory = OnboardingSettingsViewModelFactory(prefsRepo)

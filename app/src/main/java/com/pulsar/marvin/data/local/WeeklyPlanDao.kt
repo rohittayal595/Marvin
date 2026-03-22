@@ -15,6 +15,9 @@ interface WeeklyPlanDao {
     @Query("SELECT * FROM weekly_plans ORDER BY startOfWeekMillis")
     fun getAllPlans(): Flow<List<WeeklyPlan>>
     
+    @Query("SELECT * FROM weekly_plans WHERE startOfWeekMillis <= :dateMillis ORDER BY startOfWeekMillis DESC LIMIT 1")
+    suspend fun getPlanForDate(dateMillis: Long): WeeklyPlan?
+    
     @Query("DELETE FROM weekly_plans WHERE weekNumber > :week")
     suspend fun deletePlansAfter(week: Int)
     

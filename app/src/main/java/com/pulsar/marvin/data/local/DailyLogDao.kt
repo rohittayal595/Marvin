@@ -19,6 +19,9 @@ interface DailyLogDao {
     @Query("SELECT * FROM daily_logs ORDER BY dateMillis DESC")
     fun getAllLogs(): Flow<List<DailyLog>>
     
+    @Query("SELECT * FROM daily_logs WHERE weight IS NOT NULL ORDER BY dateMillis DESC LIMIT 1")
+    suspend fun getLatestLogWithWeight(): DailyLog?
+    
     @Query("SELECT * FROM daily_logs WHERE dateMillis = :dateMillis LIMIT 1")
     suspend fun getLogByDate(dateMillis: Long): DailyLog?
 }
