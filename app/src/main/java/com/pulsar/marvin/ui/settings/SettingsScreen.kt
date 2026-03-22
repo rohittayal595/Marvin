@@ -34,6 +34,13 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    var height by remember(state.height) { mutableStateOf(state.height) }
+    var targetWeight by remember(state.targetWeight) { mutableStateOf(state.targetWeight) }
+    var reductionObese by remember(state.reductionObese) { mutableStateOf(state.reductionObese) }
+    var reductionOverweight by remember(state.reductionOverweight) { mutableStateOf(state.reductionOverweight) }
+    var reductionNormal by remember(state.reductionNormal) { mutableStateOf(state.reductionNormal) }
+    var useFeetAndInches by remember(state.useFeetAndInches) { mutableStateOf(state.useFeetAndInches) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,24 +81,24 @@ fun SettingsScreen(
             ) {
                 Text("Use ft/inches for height", fontSize = 16.sp)
                 Switch(
-                    checked = state.useFeetAndInches,
-                    onCheckedChange = { viewModel.updateUseFeetAndInches(it) },
+                    checked = useFeetAndInches,
+                    onCheckedChange = { useFeetAndInches = it },
                     colors = SwitchDefaults.colors(checkedThumbColor = GreenPrimary, checkedTrackColor = Color(0xFFD1F4DE))
                 )
             }
 
-            if (state.useFeetAndInches) {
+            if (useFeetAndInches) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(bottom = 16.dp)) {
-                    val currentCm = state.height.toFloatOrNull() ?: 0f
+                    val currentCm = height.toFloatOrNull() ?: 0f
                     val totalInches = (currentCm / 2.54f)
-                    var ft by remember(state.height) { mutableIntStateOf((totalInches / 12).toInt()) }
-                    var inch by remember(state.height) { mutableIntStateOf((totalInches % 12).toInt()) }
+                    var ft by remember(height) { mutableIntStateOf((totalInches / 12).toInt()) }
+                    var inch by remember(height) { mutableIntStateOf((totalInches % 12).toInt()) }
 
                     OutlinedTextField(
                         value = if (ft == 0) "" else ft.toString(),
                         onValueChange = {
                             ft = it.toIntOrNull() ?: 0
-                            viewModel.updateHeight((ft * 30.48 + inch * 2.54).toString())
+                            height = (ft * 30.48 + inch * 2.54).toString()
                         },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -102,7 +109,7 @@ fun SettingsScreen(
                         value = if (inch == 0) "" else inch.toString(),
                         onValueChange = {
                             inch = it.toIntOrNull() ?: 0
-                            viewModel.updateHeight((ft * 30.48 + inch * 2.54).toString())
+                            height = (ft * 30.48 + inch * 2.54).toString()
                         },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -112,8 +119,8 @@ fun SettingsScreen(
                 }
             } else {
                 OutlinedTextField(
-                    value = state.height,
-                    onValueChange = { viewModel.updateHeight(it) },
+                    value = height,
+                    onValueChange = { height = it },
                     label = { Text("Height (cm)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
@@ -121,8 +128,8 @@ fun SettingsScreen(
             }
 
             OutlinedTextField(
-                value = state.targetWeight,
-                onValueChange = { viewModel.updateTargetWeight(it) },
+                value = targetWeight,
+                onValueChange = { targetWeight = it },
                 label = { Text("Target Weight") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
@@ -138,31 +145,41 @@ fun SettingsScreen(
             )
 
             OutlinedTextField(
-                value = state.reductionObese,
-                onValueChange = { viewModel.updateReductionObese(it) },
+                value = reductionObese,
+                onValueChange = { reductionObese = it },
                 label = { Text("Obese (BMI >= 30)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
 
             OutlinedTextField(
-                value = state.reductionOverweight,
-                onValueChange = { viewModel.updateReductionOverweight(it) },
+                value = reductionOverweight,
+                onValueChange = { reductionOverweight = it },
                 label = { Text("Overweight (25 <= BMI < 30)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
 
             OutlinedTextField(
-                value = state.reductionNormal,
-                onValueChange = { viewModel.updateReductionNormal(it) },
+                value = reductionNormal,
+                onValueChange = { reductionNormal = it },
                 label = { Text("Normal (BMI < 25)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
             )
 
             Button(
-                onClick = { viewModel.saveSettings(onComplete = onBack) },
+                onClick = {
+                    viewModel.saveSettings(
+                        height = height,
+                        targetWeight = targetWeight,
+                        reductionObese = reductionObese,
+                        reductionOverweight = reductionOverweight,
+                        reductionNormal = reductionNormal,
+                        useFeetAndInches = useFeetAndInches,
+                        onComplete = onBack
+                    )
+                },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
             ) {
