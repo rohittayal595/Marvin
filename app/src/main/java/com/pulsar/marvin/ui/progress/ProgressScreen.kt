@@ -21,7 +21,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pulsar.marvin.data.model.DailyLog
@@ -89,7 +93,6 @@ fun ProgressScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text("Total Loss", color = Color.Gray, fontSize = 14.sp)
-                        // Mock total loss calculation
                         val currentWeight = dailyLogs.firstOrNull()?.weight ?: startingWeight
                         val totalLoss = startingWeight - currentWeight
                         Text(String.format(java.util.Locale.getDefault(), "%.1f kg", totalLoss.coerceAtLeast(0f)), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
@@ -212,6 +215,8 @@ fun ProgressChart(
     val totalWeeks = weeklyPlans.size
     val sortedPlans = weeklyPlans.sortedBy { it.weekNumber }
 
+    val textMeasurer = rememberTextMeasurer()
+
     Canvas(modifier = Modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
@@ -219,7 +224,7 @@ fun ProgressChart(
         val paddingLeft = 40.dp.toPx()
         val paddingBottom = 30.dp.toPx()
         val graphWidth = width - paddingLeft
-        val graphHeight = height - paddingBottom
+        val graphHeight = height - paddingBottom - 16.dp.toPx() // Room for x-axis labels
 
         // Draw axes
         drawLine(
@@ -247,8 +252,14 @@ fun ProgressChart(
                 strokeWidth = 1f,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
             )
-            // drawText for Y axis is complex in raw Canvas, typically handled via standard Android Paint or compose text layout.
-            // Keeping it simple here or omitting actual text drawing for purity, drawing ticks instead.
+            val textLayoutResult = textMeasurer.measure(
+                text = String.format(java.util.Locale.getDefault(), "%.0f", yVal),
+                style = TextStyle(color = Color.Gray, fontSize = 10.sp)
+            )
+            drawText(
+                textLayoutResult = textLayoutResult,
+                topLeft = Offset(paddingLeft - textLayoutResult.size.width - 12f, yPos - textLayoutResult.size.height / 2f)
+            )
             drawLine(
                 color = Color.Gray,
                 start = Offset(paddingLeft - 10f, yPos),
@@ -269,17 +280,30 @@ fun ProgressChart(
                         end = Offset(xPos, graphHeight + 10f),
                         strokeWidth = 2f
                     )
+                    if (i > 0) {
+                        val textLayoutResult = textMeasurer.measure(
+                            text = "W$i",
+                            style = TextStyle(color = Color.Gray, fontSize = 10.sp)
+                        )
+                        drawText(
+                            textLayoutResult = textLayoutResult,
+                            topLeft = Offset(xPos - textLayoutResult.size.width / 2f, graphHeight + 16f)
+                        )
+                    }
                 }
             }
         }
 
         // Draw Projected Line (Dotted)
         if (sortedPlans.isNotEmpty()) {
-            val projectedPoints = sortedPlans.mapIndexed { index, plan ->
-                val x = paddingLeft + (index * (graphWidth / totalWeeks))
+            val projectedPoints = mutableListOf<Offset>()
+            projectedPoints.add(Offset(paddingLeft, graphHeight - ((startingWeight - minWeight) / weightRange) * graphHeight))
+            
+            projectedPoints.addAll(sortedPlans.mapIndexed { index, plan ->
+                val x = paddingLeft + ((index + 1) * (graphWidth / totalWeeks))
                 val y = graphHeight - ((plan.targetWeight - minWeight) / weightRange) * graphHeight
                 Offset(x, y)
-            }
+            })
 
             for (i in 0 until projectedPoints.size - 1) {
                 drawLine(
@@ -293,35 +317,42 @@ fun ProgressChart(
         }
 
         // Draw Actual Line (Solid)
-        // For actual implementation, we'd map dailyLogs to their respective week X coordinates.
-        // Simplified for this task: Draw a mock solid line assuming starting weight and a few logs.
-        val mockActualPoints = mutableListOf<Offset>()
-        mockActualPoints.add(Offset(paddingLeft, graphHeight - ((startingWeight - minWeight) / weightRange) * graphHeight))
+        val actualPoints = mutableListOf<Offset>()
+        actualPoints.add(Offset(paddingLeft, graphHeight - ((startingWeight - minWeight) / weightRange) * graphHeight))
         
-        // Mocking a few points for visual
-        val mockLogs = listOf(startingWeight - 0.5f, startingWeight - 1.2f, startingWeight - 1.8f)
-        mockLogs.forEachIndexed { index, weight ->
-            val x = paddingLeft + ((index + 1) * (graphWidth / totalWeeks))
-            val y = graphHeight - ((weight - minWeight) / weightRange) * graphHeight
-            mockActualPoints.add(Offset(x, y))
-            drawCircle(
-                color = SolidLineColor,
-                radius = 8f,
-                center = Offset(x, y)
-            )
+        if (sortedPlans.isNotEmpty()) {
+            sortedPlans.forEachIndexed { index, plan ->
+                val logsThisWeek = dailyLogs.filter { log ->
+                    log.dateMillis >= plan.startOfWeekMillis &&
+                    log.dateMillis <= plan.startOfWeekMillis + java.time.Duration.ofDays(6).toMillis()
+                }
+                val avgWeight = logsThisWeek.mapNotNull { it.weight }.average()
+                
+                if (!avgWeight.isNaN()) {
+                    val x = paddingLeft + ((index + 1) * (graphWidth / totalWeeks))
+                    val y = graphHeight - ((avgWeight.toFloat() - minWeight) / weightRange) * graphHeight
+                    val point = Offset(x, y)
+                    actualPoints.add(point)
+                    drawCircle(
+                        color = SolidLineColor,
+                        radius = 8f,
+                        center = point
+                    )
+                }
+            }
         }
         
         drawCircle(
             color = SolidLineColor,
             radius = 8f,
-            center = mockActualPoints.first()
+            center = actualPoints.first()
         )
 
-        for (i in 0 until mockActualPoints.size - 1) {
+        for (i in 0 until actualPoints.size - 1) {
             drawLine(
                 color = SolidLineColor,
-                start = mockActualPoints[i],
-                end = mockActualPoints[i + 1],
+                start = actualPoints[i],
+                end = actualPoints[i + 1],
                 strokeWidth = 6f
             )
         }
