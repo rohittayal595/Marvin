@@ -52,7 +52,6 @@ fun SettingsScreen(
         }
     ) { paddingValues ->
         val scrollState = rememberScrollState()
-        var useFeetAndInches by remember { mutableStateOf(true) }
 
         Column(
             modifier = Modifier
@@ -75,13 +74,13 @@ fun SettingsScreen(
             ) {
                 Text("Use ft/inches for height", fontSize = 16.sp)
                 Switch(
-                    checked = useFeetAndInches,
-                    onCheckedChange = { useFeetAndInches = it },
+                    checked = state.useFeetAndInches,
+                    onCheckedChange = { viewModel.updateUseFeetAndInches(it) },
                     colors = SwitchDefaults.colors(checkedThumbColor = GreenPrimary, checkedTrackColor = Color(0xFFD1F4DE))
                 )
             }
 
-            if (useFeetAndInches) {
+            if (state.useFeetAndInches) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(bottom = 16.dp)) {
                     val currentCm = state.height.toFloatOrNull() ?: 0f
                     val totalInches = (currentCm / 2.54f)

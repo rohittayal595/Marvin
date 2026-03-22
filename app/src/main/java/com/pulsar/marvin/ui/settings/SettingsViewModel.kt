@@ -17,7 +17,8 @@ data class SettingsState(
     val targetWeight: String = "",
     val reductionObese: String = "0.012",
     val reductionOverweight: String = "0.01",
-    val reductionNormal: String = "0.08"
+    val reductionNormal: String = "0.08",
+    val useFeetAndInches: Boolean = true
 )
 
 class SettingsViewModel(
@@ -35,7 +36,8 @@ class SettingsViewModel(
                 targetWeight = if (prefs.targetWeight > 0f) prefs.targetWeight.toString() else "",
                 reductionObese = prefs.reductionObese.toString(),
                 reductionOverweight = prefs.reductionOverweight.toString(),
-                reductionNormal = prefs.reductionNormal.toString()
+                reductionNormal = prefs.reductionNormal.toString(),
+                useFeetAndInches = prefs.useFeetAndInches
             )
         }
     }
@@ -60,6 +62,10 @@ class SettingsViewModel(
         _state.value = _state.value.copy(reductionNormal = value)
     }
 
+    fun updateUseFeetAndInches(value: Boolean) {
+        _state.value = _state.value.copy(useFeetAndInches = value)
+    }
+
     fun saveSettings(onComplete: () -> Unit) {
         viewModelScope.launch {
             val height = _state.value.height.toFloatOrNull() ?: 0f
@@ -67,8 +73,9 @@ class SettingsViewModel(
             val obese = _state.value.reductionObese.toFloatOrNull() ?: 0.012f
             val overweight = _state.value.reductionOverweight.toFloatOrNull() ?: 0.01f
             val normal = _state.value.reductionNormal.toFloatOrNull() ?: 0.08f
+            val useFeetAndInches = _state.value.useFeetAndInches
             
-            prefsRepo.saveSettingsData(height, targetWeight, obese, overweight, normal)
+            prefsRepo.saveSettingsData(height, targetWeight, obese, overweight, normal, useFeetAndInches)
             onComplete()
         }
     }
