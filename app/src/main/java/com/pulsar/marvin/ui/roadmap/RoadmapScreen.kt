@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -317,6 +318,26 @@ fun WeeklyPlanCard(
 ) {
   var expanded by remember { mutableStateOf(isCurrentWeek) }
 
+  val logsThisWeek = dailyLogs.filter { log ->
+    log.dateMillis >= plan.startOfWeekMillis &&
+      log.dateMillis <= plan.startOfWeekMillis + Duration.ofDays(6).toMillis()
+  }
+  val avgWeight = logsThisWeek.mapNotNull { it.weight }.average()
+  val avgCalories = logsThisWeek.mapNotNull { it.calories }.average()
+
+  val avgWeightText =
+    if (avgWeight.isNaN()) "-- kg" else String.format(
+      Locale.getDefault(),
+      "%.1f kg",
+      avgWeight
+    )
+  val avgCaloriesText =
+    if (avgCalories.isNaN()) "-- kcal" else String.format(
+      Locale.getDefault(),
+      "%.0f kcal",
+      avgCalories
+    )
+
   val borderColor = if (isCurrentWeek) GreenPrimary else DividerColor
   val bgColor = if (isCurrentWeek) CurrentWeekBg else CardBg
 
@@ -389,44 +410,46 @@ fun WeeklyPlanCard(
           }
         }
 
-        Column {
-          Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Column(horizontalAlignment = Alignment.End) {
             Text(
               text = "Projected",
               fontSize = 16.sp,
               fontWeight = FontWeight.Bold,
               color = DarkGrey
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            if (!avgWeightText.contains("--")) {
+              Text(
+                text = "Actual",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF26A69A)
+              )
+            }
+          }
+          Spacer(modifier = Modifier.width(8.dp))
+          Column(horizontalAlignment = Alignment.End) {
             Text(
               text = String.format(Locale.getDefault(), "%.1f kg", plan.targetWeight),
               fontSize = 16.sp,
               fontWeight = FontWeight.Bold,
               color = DarkGrey
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-              imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-              contentDescription = "Expand",
-              tint = Color.Gray
-            )
+            if (!avgWeightText.contains("--")) {
+              Text(
+                text = avgWeightText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF26A69A)
+              )
+            }
           }
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-              text = "Actual",
-              fontSize = 16.sp,
-              fontWeight = FontWeight.Bold,
-              color = Color(0xFF26A69A)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-              text = String.format(Locale.getDefault(), "%.1f kg", plan.targetWeight),
-              fontSize = 16.sp,
-              fontWeight = FontWeight.Bold,
-              color = Color(0xFF26A69A)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-          }
+          Spacer(modifier = Modifier.width(8.dp))
+          Icon(
+            imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+            contentDescription = "Expand",
+            tint = Color.Gray
+          )
         }
       }
 
@@ -460,9 +483,9 @@ fun WeeklyPlanCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
-                Text(dayAbbreviations[i], color = Color.Gray, fontSize = 14.sp)
-                Text(weightText, color = DarkGrey, fontSize = 14.sp)
-                Text(caloriesText, color = DarkGrey, fontSize = 14.sp)
+                Text(dayAbbreviations[i], color = Color.Gray, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                Text(weightText, color = DarkGrey, fontSize = 14.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                Text(caloriesText, color = DarkGrey, fontSize = 14.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
               }
               Spacer(modifier = Modifier.size(4.dp))
               if (logForDay != null) {
@@ -487,34 +510,20 @@ fun WeeklyPlanCard(
                   Text(
                     "Avg", color = Color.Gray, fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                   )
-                  val logsThisWeek = dailyLogs.filter { log ->
-                    log.dateMillis >= plan.startOfWeekMillis &&
-                      log.dateMillis <= plan.startOfWeekMillis + Duration.ofDays(6).toMillis()
-                  }
-                  val avgWeight = logsThisWeek.mapNotNull { it.weight }.average()
-                  val avgCalories = logsThisWeek.mapNotNull { it.calories }.average()
-
-                  val avgWeightText =
-                    if (avgWeight.isNaN()) "-- kg" else String.format(
-                      Locale.getDefault(),
-                      "%.1f kg",
-                      avgWeight
-                    )
-                  val avgCaloriesText =
-                    if (avgCalories.isNaN()) "-- kcal" else String.format(
-                      Locale.getDefault(),
-                      "%.0f kcal",
-                      avgCalories
-                    )
 
                   Text(
                     avgWeightText, color = DarkGrey, fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
                   )
                   Text(
                     avgCaloriesText, color = DarkGrey, fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End
                   )
                 }
                 Spacer(modifier = Modifier.size(24.dp))
