@@ -10,8 +10,9 @@ fun Step1Preview() {
     MarvinTheme {
         Step1Height(
             heightText = "170",
+            useFeetAndInches = false,
             onHeightChange = {},
-            onContinue = {}
+            onContinue = {},
         )
     }
 }
@@ -37,7 +38,7 @@ fun Step3Preview() {
             onTargetWeightChange = {},
             minWeight = 53.5f,
             maxWeight = 72.0f,
-            onStartJourney = {}
+            onStartJourney = {},
         )
     }
 }

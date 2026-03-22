@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AdsClick
 import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.Straighten
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +54,7 @@ val ScreenBgColor = Color(0xFFF4FAF6)
 fun OnboardingScreen(
   viewModel: OnboardingViewModel,
   onComplete: () -> Unit,
+  onSettingsClick: () -> Unit,
 ) {
   val pagerState = rememberPagerState(pageCount = { 3 })
   val coroutineScope = rememberCoroutineScope()
@@ -90,32 +92,47 @@ fun OnboardingScreen(
             modifier = Modifier.padding(24.dp),
             userScrollEnabled = false
           ) { page ->
-            when (page) {
-              0 -> Step1Height(
-                heightText = heightText,
-                onHeightChange = viewModel::updateHeight,
-                onContinue = {
-                  coroutineScope.launch { pagerState.animateScrollToPage(1) }
-                }
-              )
+            Box(modifier = Modifier) {
+              when (page) {
 
-              1 -> Step2Weight(
-                weightText = weightText,
-                onWeightChange = viewModel::updateWeight,
-                onContinue = {
-                  coroutineScope.launch { pagerState.animateScrollToPage(2) }
-                }
-              )
+                0 -> Step1Height(
+                  heightText = heightText,
+                  useFeetAndInches = viewModel.useFeetAndInches.collectAsState().value,
+                  onHeightChange = viewModel::updateHeight,
+                  onContinue = {
+                    coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                  },
+                )
 
-              2 -> Step3Target(
-                targetWeightText = targetWeightText,
-                onTargetWeightChange = viewModel::updateTargetWeight,
-                minWeight = healthyRange.first,
-                maxWeight = healthyRange.second,
-                onStartJourney = {
-                  viewModel.completeOnboarding(onComplete)
-                }
-              )
+                1 -> Step2Weight(
+                  weightText = weightText,
+                  onWeightChange = viewModel::updateWeight,
+                  onContinue = {
+                    coroutineScope.launch { pagerState.animateScrollToPage(2) }
+                  }
+                )
+
+                2 -> Step3Target(
+                  targetWeightText = targetWeightText,
+                  onTargetWeightChange = viewModel::updateTargetWeight,
+                  minWeight = healthyRange.first,
+                  maxWeight = healthyRange.second,
+                  onStartJourney = {
+                    viewModel.completeOnboarding(onComplete)
+                  },
+                )
+              }
+
+              IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.align(Alignment.TopEnd)
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Settings,
+                  contentDescription = "Settings",
+                  tint = Color.Gray
+                )
+              }
             }
           }
         }
@@ -143,6 +160,7 @@ fun OnboardingScreen(
 @Composable
 fun Step1Height(
   heightText: String,
+  useFeetAndInches: Boolean,
   onHeightChange: (String) -> Unit,
   onContinue: () -> Unit,
 ) {
@@ -186,78 +204,81 @@ fun Step1Height(
     Spacer(modifier = Modifier.height(32.dp))
 
     Column(modifier = Modifier.fillMaxWidth()) {
-      // Text(
-      //     text = "Height (cm)",
-      //     fontSize = 14.sp,
-      //     fontWeight = FontWeight.Medium,
-      //     color = Color.Black
-      // )
-      // Spacer(modifier = Modifier.height(8.dp))
-      // OutlinedTextField(
-      //     value = heightText,
-      //     onValueChange = onHeightChange,
-      //     modifier = Modifier.fillMaxWidth(),
-      //     shape = RoundedCornerShape(12.dp),
-      //     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-      //     isError = !heightText.isEmpty() && heightText.replace(",", ".").toFloatOrNull() == null,
-      //     singleLine = true,
-      //     placeholder = { Text("170", color = Color.Gray) },
-      //     colors = OutlinedTextFieldDefaults.colors(
-      //         unfocusedContainerColor = Color(0xFFF3F3F3),
-      //         focusedContainerColor = Color(0xFFF3F3F3),
-      //         unfocusedBorderColor = Color.Transparent,
-      //         focusedBorderColor = Step1IconColor
-      //     )
-      // )
-      Text(
-        text = "Height (ft' in'')",
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Medium,
-        color = Color.Black
-      )
-      Spacer(modifier = Modifier.height(8.dp))
-      Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        var ft by remember { mutableIntStateOf(0) }
-        var inch by remember { mutableIntStateOf(0) }
+      if (!useFeetAndInches) {
+        Text(
+          text = "Height (cm)",
+          fontSize = 14.sp,
+          fontWeight = FontWeight.Medium,
+          color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+          value = heightText,
+          onValueChange = onHeightChange,
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(12.dp),
+          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+          isError = !heightText.isEmpty() && heightText.replace(",", ".").toFloatOrNull() == null,
+          singleLine = true,
+          placeholder = { Text("170", color = Color.Gray) },
+          colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = Color(0xFFF3F3F3),
+            focusedContainerColor = Color(0xFFF3F3F3),
+            unfocusedBorderColor = Color.Transparent,
+            focusedBorderColor = Step1IconColor
+          )
+        )
+      } else {
+        Text(
+          text = "Height (ft' in'')",
+          fontSize = 14.sp,
+          fontWeight = FontWeight.Medium,
+          color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+          var ft by remember { mutableIntStateOf(0) }
+          var inch by remember { mutableIntStateOf(0) }
 
-        OutlinedTextField(
-          value = if (ft == 0) "" else ft.toString(),
-          onValueChange = {
-            ft = it.toIntOrNull() ?: 0
-            onHeightChange((ft * 30.48 + inch * 2.54).toString())
-          },
-          modifier = Modifier.weight(1f),
-          shape = RoundedCornerShape(12.dp),
-          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-          isError = !heightText.isEmpty() && heightText.replace(",", ".").toFloatOrNull() == null,
-          singleLine = true,
-          placeholder = { Text("ft", color = Color.Gray) },
-          colors = OutlinedTextFieldDefaults.colors(
-            unfocusedContainerColor = Color(0xFFF3F3F3),
-            focusedContainerColor = Color(0xFFF3F3F3),
-            unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = Step1IconColor
+          OutlinedTextField(
+            value = if (ft == 0) "" else ft.toString(),
+            onValueChange = {
+              ft = it.toIntOrNull() ?: 0
+              onHeightChange((ft * 30.48 + inch * 2.54).toString())
+            },
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = !heightText.isEmpty() && heightText.replace(",", ".").toFloatOrNull() == null,
+            singleLine = true,
+            placeholder = { Text("ft", color = Color.Gray) },
+            colors = OutlinedTextFieldDefaults.colors(
+              unfocusedContainerColor = Color(0xFFF3F3F3),
+              focusedContainerColor = Color(0xFFF3F3F3),
+              unfocusedBorderColor = Color.Transparent,
+              focusedBorderColor = Step1IconColor
+            )
           )
-        )
-        OutlinedTextField(
-          value = if (inch == 0) "" else inch.toString(),
-          onValueChange = {
-            inch = it.toIntOrNull() ?: 0
-            onHeightChange((ft * 30.48 + inch * 2.54).toString())
-          },
-          modifier = Modifier.weight(1f),
-          shape = RoundedCornerShape(12.dp),
-          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-          isError = !heightText.isEmpty() && heightText.replace(",", ".").toFloatOrNull() == null,
-          singleLine = true,
-          placeholder = { Text("inch", color = Color.Gray) },
-          colors = OutlinedTextFieldDefaults.colors(
-            unfocusedContainerColor = Color(0xFFF3F3F3),
-            focusedContainerColor = Color(0xFFF3F3F3),
-            unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = Step1IconColor
+          OutlinedTextField(
+            value = if (inch == 0) "" else inch.toString(),
+            onValueChange = {
+              inch = it.toIntOrNull() ?: 0
+              onHeightChange((ft * 30.48 + inch * 2.54).toString())
+            },
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = !heightText.isEmpty() && heightText.replace(",", ".").toFloatOrNull() == null,
+            singleLine = true,
+            placeholder = { Text("inch", color = Color.Gray) },
+            colors = OutlinedTextFieldDefaults.colors(
+              unfocusedContainerColor = Color(0xFFF3F3F3),
+              focusedContainerColor = Color(0xFFF3F3F3),
+              unfocusedBorderColor = Color.Transparent,
+              focusedBorderColor = Step1IconColor
+            )
           )
-        )
+        }
       }
     }
 

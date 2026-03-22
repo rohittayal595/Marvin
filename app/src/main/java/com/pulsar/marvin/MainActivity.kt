@@ -31,7 +31,7 @@ import com.pulsar.marvin.ui.settings.SettingsViewModelFactory
 import com.pulsar.marvin.ui.theme.MarvinTheme
 
 enum class Screen {
-    ONBOARDING, ROADMAP, PROGRESS, SETTINGS
+    ONBOARDING, ROADMAP, PROGRESS, SETTINGS, ONBOARDING_SETTINGS
 }
 
 class MainActivity : ComponentActivity() {
@@ -76,7 +76,8 @@ class MainActivity : ComponentActivity() {
                             if (prefs != null) {
                                 OnboardingScreen(
                                     viewModel = onboardingViewModel,
-                                    onComplete = { currentScreen = Screen.ROADMAP }
+                                    onComplete = { currentScreen = Screen.ROADMAP },
+                                    onSettingsClick = { currentScreen = Screen.ONBOARDING_SETTINGS }
                                 )
                             }
                         }
@@ -134,6 +135,12 @@ class MainActivity : ComponentActivity() {
                             SettingsScreen(
                                 viewModel = settingsViewModel,
                                 onBack = { currentScreen = Screen.ROADMAP }
+                            )
+                        }
+                        Screen.ONBOARDING_SETTINGS -> {
+                            com.pulsar.marvin.ui.onboarding.OnboardingSettingsScreen(
+                                viewModel = settingsViewModel,
+                                onBack = { currentScreen = Screen.ONBOARDING }
                             )
                         }
                     }

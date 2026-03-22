@@ -20,6 +20,17 @@ class OnboardingViewModel(
   private val weeklyPlanDao: WeeklyPlanDao,
 ) : ViewModel() {
 
+  private val _useFeetAndInches = MutableStateFlow(true)
+  val useFeetAndInches: StateFlow<Boolean> = _useFeetAndInches.asStateFlow()
+
+  init {
+      viewModelScope.launch {
+          prefsRepo.userPreferencesFlow.collect { prefs ->
+              _useFeetAndInches.value = prefs.useFeetAndInches
+          }
+      }
+  }
+
   private val _heightText = MutableStateFlow("")
   val heightText: StateFlow<String> = _heightText.asStateFlow()
 
