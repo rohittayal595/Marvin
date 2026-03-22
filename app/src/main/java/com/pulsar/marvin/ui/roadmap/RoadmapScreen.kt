@@ -25,6 +25,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +38,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -146,12 +150,7 @@ fun RoadmapScreen(
           verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
           items(state.weeklyPlans) { plan ->
-            val dailyLogs = state.dailyLogs.filter {
-              it.dateMillis >= plan.startOfWeekMillis && it.dateMillis < Instant.ofEpochMilli(plan.startOfWeekMillis)
-                .plus(
-                  Duration.ofDays(7)
-                ).toEpochMilli()
-            }
+            val dailyLogs = state.dailyLogs
             WeeklyPlanCard(
               plan = plan,
               dailyLogs = dailyLogs,
@@ -168,8 +167,8 @@ fun RoadmapScreen(
       if (state.showCheckInModal) {
         DailyCheckInDialog(
           onDismiss = { viewModel.setShowCheckInModal(false) },
-          onSave = { weight, calories ->
-            viewModel.saveDailyLog(weight, calories)
+          onSave = { weight, calories, dateMillis ->
+            viewModel.saveDailyLog(weight, calories, dateMillis)
           }
         )
       }
@@ -414,17 +413,6 @@ fun WeeklyPlanCard(
         Column(modifier = Modifier.padding(top = 16.dp)) {
           HorizontalDivider(color = DividerColor)
           Spacer(modifier = Modifier.height(16.dp))
-          // Pivot Option for Task 3
-          if (isCurrentWeek) {
-            OutlinedButton(
-              onClick = onPivotClick,
-              modifier = Modifier.fillMaxWidth(),
-              border = BorderStroke(1.dp, Color(0xFFE65100))
-            ) {
-              Text("Review Week / Pivot", color = Color(0xFFE65100))
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-          }
 
           // Daily logs for the week
           val dayAbbreviations = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
@@ -434,10 +422,13 @@ fun WeeklyPlanCard(
 
           for (i in 0..6) {
             val currentDate = startDate.plusDays(i.toLong())
-            val currentDayMillis = currentDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val currentDayMillis =
+              currentDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val logForDay = dailyLogs.find { it.dateMillis == currentDayMillis }
 
-            val weightText = logForDay?.weight?.let { String.format(Locale.getDefault(), "%.1f kg", it) } ?: "-- kg"
+            val weightText =
+              logForDay?.weight?.let { String.format(Locale.getDefault(), "%.1f kg", it) }
+                ?: "-- kg"
             val caloriesText = logForDay?.calories?.let { "$it kcal" } ?: "-- kcal"
 
             Row(
@@ -453,19 +444,73 @@ fun WeeklyPlanCard(
               Spacer(modifier = Modifier.height(8.dp))
             }
           }
+
+
+          val nowMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+          val lastDayOfWeek = Instant.ofEpochMilli(plan.startOfWeekMillis).plus(Duration.ofDays(6)).toEpochMilli()
+          // Pivot Option for Task 3
+          if (/*nowMillis > lastDayOfWeek &&*/ dailyLogs.first().dateMillis <= lastDayOfWeek) {
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(
+              onClick = onPivotClick,
+              modifier = Modifier.fillMaxWidth(),
+              border = BorderStroke(1.dp, Color(0xFFE65100))
+            ) {
+              Text("Review Week / Pivot", color = Color(0xFFE65100))
+            }
+          }
         }
       }
     }
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DailyCheckInDialog(
   onDismiss: () -> Unit,
-  onSave: (weight: Float?, calories: Int?) -> Unit,
+  onSave: (weight: Float?, calories: Int?, dateMillis: Long) -> Unit,
 ) {
   var weightInput by remember { mutableStateOf("") }
   var caloriesInput by remember { mutableStateOf("") }
+  var selectedDateMillis by remember {
+    mutableLongStateOf(
+      LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    )
+  }
+  var showDatePicker by remember { mutableStateOf(false) }
+
+  if (showDatePicker) {
+    val initialUtcMillis = remember(selectedDateMillis) {
+      val localDate =
+        Instant.ofEpochMilli(selectedDateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+      localDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+    }
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialUtcMillis)
+    DatePickerDialog(
+      onDismissRequest = { showDatePicker = false },
+      confirmButton = {
+        TextButton(onClick = {
+          val utcSelected = datePickerState.selectedDateMillis
+          if (utcSelected != null) {
+            val localDate = Instant.ofEpochMilli(utcSelected).atZone(ZoneId.of("UTC")).toLocalDate()
+            selectedDateMillis =
+              localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+          }
+          showDatePicker = false
+        }) {
+          Text("OK")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showDatePicker = false }) {
+          Text("Cancel")
+        }
+      }
+    ) {
+      DatePicker(state = datePickerState)
+    }
+  }
 
   Dialog(onDismissRequest = onDismiss) {
     Card(
@@ -496,9 +541,31 @@ fun DailyCheckInDialog(
           }
         }
 
-        val today =
-          LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM dd", Locale.getDefault()))
-        Text(today, color = Color.Gray, fontSize = 14.sp)
+        val formattedDate = Instant.ofEpochMilli(selectedDateMillis)
+          .atZone(ZoneId.systemDefault())
+          .toLocalDate()
+          .format(DateTimeFormatter.ofPattern("EEEE, MMMM dd", Locale.getDefault()))
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier
+            .clickable { showDatePicker = true }
+            .padding(4.dp)
+        ) {
+          Text(
+            text = formattedDate,
+            color = GreenPrimary,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+          )
+          Spacer(modifier = Modifier.width(4.dp))
+          Icon(
+            Icons.Rounded.ExpandMore,
+            contentDescription = "Select Date",
+            tint = GreenPrimary,
+            modifier = Modifier.size(16.dp)
+          )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -580,7 +647,7 @@ fun DailyCheckInDialog(
             onClick = {
               val w = weightInput.toFloatOrNull()
               val c = caloriesInput.toIntOrNull()
-              onSave(w, c)
+              onSave(w, c, selectedDateMillis)
             },
             modifier = Modifier
               .weight(1f)

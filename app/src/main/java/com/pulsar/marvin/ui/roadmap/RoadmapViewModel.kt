@@ -67,9 +67,8 @@ class RoadmapViewModel(
         _state.value = _state.value.copy(showCheckInModal = show)
     }
 
-    fun saveDailyLog(weight: Float?, calories: Int?) {
+    fun saveDailyLog(weight: Float?, calories: Int?, dateMillis: Long) {
         viewModelScope.launch {
-            val dateMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             dailyLogDao.insert(DailyLog(dateMillis = dateMillis, weight = weight, calories = calories))
             setShowCheckInModal(false)
         }
