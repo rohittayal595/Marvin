@@ -10,6 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,92 +20,118 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pulsar.marvin.ui.settings.SettingsViewModel
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingSettingsScreen(
-    viewModel: SettingsViewModel,
-    onBack: () -> Unit
+  viewModel: OnboardingSettingsViewModel,
+  onBack: () -> Unit,
 ) {
-    val state by viewModel.state.collectAsState()
-    val scrollState = rememberScrollState()
+  val state by viewModel.state.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Step1IconColor,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(scrollState)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Use ft/inches for height", fontSize = 16.sp)
-                Switch(
-                    checked = state.useFeetAndInches,
-                    onCheckedChange = { viewModel.updateUseFeetAndInches(it) },
-                    colors = SwitchDefaults.colors(checkedThumbColor = Step1IconColor, checkedTrackColor = Step1IconBg)
-                )
-            }
+  // Local state to prevent updating shared viewmodel/preferences before Save
+  var useFeetAndInches by remember(state.useFeetAndInches) { mutableStateOf(state.useFeetAndInches) }
+  var reductionObese by remember(state.reductionObese) { mutableStateOf(state.reductionObese) }
+  var reductionOverweight by remember(state.reductionOverweight) { mutableStateOf(state.reductionOverweight) }
+  var reductionNormal by remember(state.reductionNormal) { mutableStateOf(state.reductionNormal) }
 
-            Text(
-                text = "Target Weight Reduction Rates",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+  val scrollState = rememberScrollState()
 
-            OutlinedTextField(
-                value = state.reductionObese,
-                onValueChange = { viewModel.updateReductionObese(it) },
-                label = { Text("Obese (BMI >= 30)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-            )
-
-            OutlinedTextField(
-                value = state.reductionOverweight,
-                onValueChange = { viewModel.updateReductionOverweight(it) },
-                label = { Text("Overweight (BMI >= 25)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-            )
-
-            OutlinedTextField(
-                value = state.reductionNormal,
-                onValueChange = { viewModel.updateReductionNormal(it) },
-                label = { Text("Normal (BMI < 25)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
-            )
-
-            Button(
-                onClick = { viewModel.saveSettings(onBack) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Step1IconColor)
-            ) {
-                Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        }
+  Scaffold(
+    topBar = {
+      TopAppBar(
+        title = { Text("Settings") },
+        navigationIcon = {
+          IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+          }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+          containerColor = Step1IconColor,
+          titleContentColor = Color.White,
+          navigationIconContentColor = Color.White
+        )
+      )
     }
+  ) { paddingValues ->
+    Column(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(paddingValues)
+        .padding(16.dp)
+        .verticalScroll(scrollState)
+    ) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(bottom = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+      ) {
+        Text("Use ft/inches for height", fontSize = 16.sp)
+        Switch(
+          checked = useFeetAndInches,
+          onCheckedChange = { useFeetAndInches = it },
+          colors = SwitchDefaults.colors(
+            checkedThumbColor = Step1IconColor,
+            checkedTrackColor = Step1IconBg
+          )
+        )
+      }
+
+      Text(
+        text = "Target Weight Reduction Rates",
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 16.dp)
+      )
+
+      OutlinedTextField(
+        value = reductionObese,
+        onValueChange = { reductionObese = it },
+        label = { Text("Obese (BMI >= 30)") },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(bottom = 16.dp)
+      )
+
+      OutlinedTextField(
+        value = reductionOverweight,
+        onValueChange = { reductionOverweight = it },
+        label = { Text("Overweight (25 <= BMI < 30)") },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(bottom = 16.dp)
+      )
+
+      OutlinedTextField(
+        value = reductionNormal,
+        onValueChange = { reductionNormal = it },
+        label = { Text("Normal (BMI < 25)") },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(bottom = 24.dp)
+      )
+
+      Button(
+        onClick = {
+          viewModel.saveSettings(
+            reductionObese = reductionObese,
+            reductionOverweight = reductionOverweight,
+            reductionNormal = reductionNormal,
+            useFeetAndInches = useFeetAndInches,
+            onComplete = onBack
+          )
+        },
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(50.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Step1IconColor)
+      ) {
+        Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+      }
+    }
+  }
 }

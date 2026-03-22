@@ -17,6 +17,9 @@ import com.pulsar.marvin.data.local.AppDatabase
 import com.pulsar.marvin.data.prefs.UserPreferencesRepository
 import com.pulsar.marvin.data.prefs.dataStore
 import com.pulsar.marvin.ui.onboarding.OnboardingScreen
+import com.pulsar.marvin.ui.onboarding.OnboardingSettingsScreen
+import com.pulsar.marvin.ui.onboarding.OnboardingSettingsViewModel
+import com.pulsar.marvin.ui.onboarding.OnboardingSettingsViewModelFactory
 import com.pulsar.marvin.ui.onboarding.OnboardingViewModel
 import com.pulsar.marvin.ui.onboarding.OnboardingViewModelFactory
 import com.pulsar.marvin.ui.pivot.PivotOption
@@ -51,6 +54,9 @@ class MainActivity : ComponentActivity() {
 
         val settingsFactory = SettingsViewModelFactory(prefsRepo)
         val settingsViewModel = ViewModelProvider(this, settingsFactory)[SettingsViewModel::class.java]
+
+        val onboardingSettingsFactory = OnboardingSettingsViewModelFactory(prefsRepo)
+        val onboardingSettingsViewModel = ViewModelProvider(this, onboardingSettingsFactory)[OnboardingSettingsViewModel::class.java]
 
         setupDailyReminder()
 
@@ -138,10 +144,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         Screen.ONBOARDING_SETTINGS -> {
-                            com.pulsar.marvin.ui.onboarding.OnboardingSettingsScreen(
-                                viewModel = settingsViewModel,
-                                onBack = { currentScreen = Screen.ONBOARDING }
-                            )
+                          OnboardingSettingsScreen(
+                              viewModel = onboardingSettingsViewModel,
+                              onBack = { currentScreen = Screen.ONBOARDING }
+                          )
                         }
                     }
                 }

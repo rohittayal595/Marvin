@@ -123,15 +123,17 @@ fun OnboardingScreen(
                 )
               }
 
-              IconButton(
-                onClick = onSettingsClick,
-                modifier = Modifier.align(Alignment.TopEnd)
-              ) {
-                Icon(
-                  imageVector = Icons.Rounded.Settings,
-                  contentDescription = "Settings",
-                  tint = Color.Gray
-                )
+              if (page != 1) {
+                IconButton(
+                  onClick = onSettingsClick,
+                  modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                  Icon(
+                    imageVector = Icons.Rounded.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.Gray
+                  )
+                }
               }
             }
           }

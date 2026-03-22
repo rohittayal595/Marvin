@@ -148,7 +148,7 @@ fun SettingsScreen(
             OutlinedTextField(
                 value = state.reductionOverweight,
                 onValueChange = { viewModel.updateReductionOverweight(it) },
-                label = { Text("Overweight (BMI >= 25)") },
+                label = { Text("Overweight (25 <= BMI < 30)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
@@ -162,7 +162,7 @@ fun SettingsScreen(
             )
 
             Button(
-                onClick = { viewModel.saveSettings(onBack) },
+                onClick = { viewModel.saveSettings(onComplete = onBack) },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
             ) {
