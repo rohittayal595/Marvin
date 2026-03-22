@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -106,6 +109,22 @@ fun RoadmapScreen(
 
   Scaffold(
     containerColor = ScreenBg,
+    topBar = {
+      val currentWeekIndex =
+        state.weeklyPlans.map { it.startOfWeekMillis }.indexOf(state.currentWeekStartMillis)
+
+      val lastWeekStart = Instant.ofEpochMilli(state.weeklyPlans.lastOrNull()?.startOfWeekMillis ?: 0L)
+        .atZone(ZoneId.systemDefault()).toLocalDate()
+      val etaDate = lastWeekStart.plusDays(6)
+      RoadmapHeader(
+        targetWeight = state.userPreferences?.targetWeight ?: 0f,
+        totalWeeks = state.weeklyPlans.size,
+        currentWeek = currentWeekIndex,
+        onStatsClick = onNavigateToProgress,
+        onSettingsClick = onNavigateToSettings,
+        etaDate = etaDate,
+      )
+    },
     floatingActionButton = {
       FloatingActionButton(
         onClick = { viewModel.setShowCheckInModal(true) },
@@ -123,24 +142,6 @@ fun RoadmapScreen(
         .padding(paddingValues)
     ) {
       Column(modifier = Modifier.fillMaxSize()) {
-        val today = LocalDate.now().atStartOfDay(ZoneId.systemDefault())
-        val daysToSubtract = today.dayOfWeek.value % 7
-        val currentWeekStartMillis = today.minusDays(daysToSubtract.toLong()).toInstant()
-          .toEpochMilli() // start of week: Sunday
-        val currentWeekIndex =
-          state.weeklyPlans.map { it.startOfWeekMillis }.indexOf(currentWeekStartMillis)
-
-        val lastWeekStart = Instant.ofEpochMilli(state.weeklyPlans.last().startOfWeekMillis)
-          .atZone(ZoneId.systemDefault()).toLocalDate()
-        val etaDate = lastWeekStart.plusDays(6)
-        RoadmapHeader(
-          targetWeight = state.userPreferences?.targetWeight ?: 0f,
-          totalWeeks = state.weeklyPlans.size,
-          currentWeek = currentWeekIndex,
-          onStatsClick = onNavigateToProgress,
-          onSettingsClick = onNavigateToSettings,
-          etaDate = etaDate,
-        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -216,7 +217,8 @@ fun RoadmapHeader(
         color = GreenPrimary,
         shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
       )
-      .padding(top = 48.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
+      .windowInsetsPadding(WindowInsets.statusBars)
+      .padding(top = 16.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
   ) {
     Column {
       Row(
